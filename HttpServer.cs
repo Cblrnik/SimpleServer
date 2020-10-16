@@ -16,45 +16,45 @@ namespace SimpleServer
         public const string WEB_DIR = "/Root/web";
         public const string VERSION = "v 1.0";
         public const string SERVERNAME = " MEMES ";
-        TcpListener listener;
+        HttpListener listener;
 
         bool running = false;
         public HttpServer(int port)
         {
-            listener = new TcpListener(IPAddress.Any, port);
+            listener = new HttpListener();
+            listener.Prefixes.Add($"http://localhost:{port}/");
         }
         public void Start() 
         {
-            Thread thread = new Thread(new ThreadStart(Run));
-            thread.Start();
+            listener.Start();
+            Run();
         }
         void Run() 
         {
-            listener.Start();
-            running = true;
             Console.WriteLine("Server is running");
+            Console.WriteLine("Waiting for connection...");
+            running = true;
             while (running)
             {
-                Console.WriteLine("Waiting for connection...");
-                TcpClient client = listener.AcceptTcpClient();
-                Console.WriteLine("Client connected");
-                HandleClient(client);
+                HandleClientFlow();
+                Console.WriteLine("Обработка подключения завершена");
             }
+            listener.Stop();
         }
-        void HandleClient(TcpClient client) 
+        Request InformationAboutConnection(HttpListenerRequest request) 
         {
-            var ClientStream = client.GetStream();
-            StreamReader reader = new StreamReader(ClientStream);
-            string massage = "";
-            while (reader.Peek() != -1) 
-            {
-                massage += reader.ReadLine().Trim() + "\n";
-            }
-            Console.WriteLine($"REQUEST: \n\r {massage}");
-            Request request = Request.GetRequest(massage);
+            Request req = Request.GetRequest(request);
+            Console.WriteLine($"REQUEST: \n\r {req}");
+            return req;
+        }
+        
+        
+        void HandleClientFlow() 
+        {
+            HttpListenerContext context = listener.GetContext();
+            Request request = InformationAboutConnection(context.Request);
             Response response = Response.From(request);
-            response.Post(ClientStream);
-            reader.Close();
+            response.Post(context.Response);
         }
     }
 }

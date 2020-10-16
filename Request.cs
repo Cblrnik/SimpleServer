@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace SimpleServer
@@ -17,18 +18,17 @@ namespace SimpleServer
             this.URL = URL;
             this.Host = host;
         }
-        public static Request GetRequest(string msg) 
+        public override string ToString()
         {
-            if (String.IsNullOrEmpty(msg))
+            return $"{type}, {URL}, {Host}";
+        }
+        public static Request GetRequest(HttpListenerRequest request) 
+        {
+            if (request == null)
             {
                 return null;
             }
-            string[] tokens = msg.Split(' ');
-            tokens[3] = tokens[3].Split(new string[]{ "\n" },StringSplitOptions.RemoveEmptyEntries)[0];
-            Console.WriteLine($"TYPE:{tokens[0]}, URL:{tokens[1]}, HOST:{tokens[3]}");
-            return new Request(tokens[0], tokens[1], tokens[3]);
-
-            
+            return new Request(request.HttpMethod,request.RawUrl,request.UserHostAddress);
         }
     }
 }
